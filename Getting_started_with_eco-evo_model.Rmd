@@ -1,0 +1,43 @@
+---
+title: "Getting started with eco-evo model"
+output: html_notebook
+---
+
+I have never used R Notebooks before, nor have I ever built a model for publication. Let's try it!
+
+The goal here is to sketch out the main ideas that I have for the eco-evolutionary model that Holly and I proposed as a part of my NSF postdoc application. 
+
+Here is what I proposed to do:
+
+"I will examine how trees shift their portfolio strategies under simulated drought scenarios of varying frequency, intensity, and duration. In this stage-structured model, individual trees will be assigned fungal portfolio strategies. These strategies will be defined by two primary traits: the number of fungi a tree associates with (q) [this was theta originally, but copy-paste made it q, which is fine with me], a measure of specificity, and the degree to which those fungi improve tree performance, on average, in the current environment (s) [originally sigma]. Both of these traits will influence the demographic rates of the trees and their reproductive outputs. New portfolio strategies will emerge occasionally via mutation. I will use this model to explore the adaptive dynamics of this tree-fungal mutualism, identifying optimal portfolio strategies under each environment, and determining which may represent evolutionarily stable strategies for trees"
+
+So. To make this happen I will need a population of trees. This population has a couple of key properties:
+
+A distribution of q values (from low specificity to high specificity)
+
+A distribution of s values in environment A (from low benefit to high benefit)
+
+A distribution of s values in environment B (from low to high benefit)
+
+I will also eventually need a "population" of drought scenarios. These will vary in 
+
+frequency
+
+intensity
+
+duration
+
+With some reasonable probabilities associated with each state.
+
+I'll start with the trees to try to get a simulated population going. Then I will try two environmental conditions. Then I'll see if I can get the populations to evolve via simulation. Only THEN will I layer in more nuanced drought scenarios.
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
