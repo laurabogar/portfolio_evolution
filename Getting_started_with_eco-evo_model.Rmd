@@ -37,26 +37,38 @@ Let's say q can range from 1 (literally just one fungus can grow with this tree)
 
 We're going to have a forest of 100 trees.
 
-```{r}
+```{r producing specificity distribution}
 # Defining q (specificity distribution)
+set.seed(30) # arbitrary constant so I can reproduce these initial analyses.
 forest_size = 100
 mean_specificity = 50
 sd_specificity = 20
 
-q = rnorm(forest_size, mean = mean_specificity, sd = sd_specificity)
+q = round(rnorm(forest_size, mean = mean_specificity, sd = sd_specificity)) # rounding to keep it integral
+
+for (i in 1:length(q)) {
+  if (q[i] < 0) {
+    newvalue = round(rnorm(1, mean = mean_specificity, sd = sd_specificity))
+    if (newvalue < 0 ) {
+    newvalue = newvalue * -1 # coerce positive
+    } 
+    q[i] = newvalue
+  } 
+}
+
 hist(q)
 
 ```
 
-Are all these fungi equally useful? Probably not. Let's treat the benefit axis (s) as a log growth response for now, so it lines up well with empirical results. A log growth response is:
+Are all these fungi equally useful? Probably not. Let's treat the benefit axis (s) as a  growth response for now, so it lines up well with empirical results. A  growth response is:
 
-ln(mass of tree with fungi/mean mass of trees without fungi)
+mass of tree with fungi/mean mass of trees without fungi
 
-Conveniently, this metric produces negative values when a fungus is parasitic, and positive values when the fungus is helpful. (I don't know if this will prove unwieldy in a modeling context. Let's see how it goes.)
+Conveniently, if you take the natural log, this metric produces negative values when a fungus is parasitic, and positive values when the fungus is helpful. (I don't know if this will prove unwieldy in a modeling context. Let's see how it goes. We'll start with the basic ratio and then log-transform if possible/appropriate)
 
 In realistic circumstances, it would be surprising if a fungus reduced a plant's growth by more than 50% without just killing it. (Perhaps I should work in a "the plant died" option down the line.) And the greatest growth IMPROVEMENT I've ever seen in a seedling was 5X, with Arbutus menziesii seedligs and Thelephora terrestris in a very low-N artificial soil after about a year of growth. (Note: Eventually I should tie these values to a lit review. But, for now, we're building this model based on my instincts.)
 
-```{r}
+```{r producing benefit distribution}
 # Defining s (benefit distribution)
 
 mean_benefit_factor = 2 # let's say that plants with fungi generally grow twice as big as plants without
@@ -64,10 +76,91 @@ sd_benefit_factor = mean_benefit_factor*.2 # just a guess that most plants get w
 
 s = rnorm(forest_size, mean = mean_benefit_factor, sd = sd_benefit_factor)
 
-
 hist(s)
 
 ```
+
+Now I need to actually make the trees by giving each tree a set of traits (q,s), and somehow evolve them.
+q and s aren't sorted -- might as well just treat the first entry as tree 1, the second entry as tree 2, etc.
+
+How should this work? Each tree will basically clone itself. The probability of reproduction and/or number of offspring should be a function of s (benefit).
+
+But wait -- should s be a property of EACH fungus? It should. So I guess each tree should pull a number of values from s depending on how many fungi it has?
+
+We need some kind of permanent (or at least durable) link between s ( the benefit provided by a fungus) and the identity of a fungus through time, if I'm going to see any trees evolve to specialize on particular fungi. 
+
+Hmmmmm
+
+Okay. What if each tree, t(i), grabs q values from the s distribution, then takes as its benefit the mean of all those values?
+
+```{r giving trees portfolios}
+portfolios = list(length(q))
+
+for (i in 1:length(q)) {
+  draw = round(runif(q[i], min = 1, max = length(s)))
+  t = s[draw]
+  portfolios[[i]] = t
+}
+```
+All right, it worked! Each tree now has a portfolio of fungi defined by the benefit they provide. 
+
+In order to evolve this population, I need these values to correspond to survival and reproductive probabilities. 
+
+For the moment, let's simplify everything and say that, if a tree gets less benefit than average, it doesn't survive to the next time step.
+
+Questions that come to mind here:
+- Should the trees be competing with each other to determine survival/repro? What function should I be using?
+
+```{r walking trees through time}
+mean_portfolio_values = numeric(length(q))
+for (i in 1:length(portfolios)) {
+  mean_portfolio_values[i] = mean(portfolios[[i]])
+}
+average_benefit = mean(mean_portfolio_values)
+
+dead = numeric(length(q))
+for (i in 1:length(mean_portfolio_values)) {
+  if (mean_portfolio_values[i] < average_benefit) {
+    dead[i] = 1
+  }
+}
+
+# doesn't work:
+# survivors = q[-dead]
+# length(survivors)
+#gaaah why can't I remember how to subset like this?
+
+# whatever, I can do it in a data frame
+mysub = data.frame(q, dead)
+mysub = subset(mysub, dead != 1)
+
+# Let's let the trees clone themselves to bring the population size back up. I'll need to make this more intelligent later on.
+
+numberreps = ceiling(forest_size/nrow(mysub))
+newpop = mysub[rep(seq_len(nrow(mysub)), numberreps), ]
+newpop = newpop[1:forest_size,] # arbitrarily take first hundred entries
+
+portfolios = list(nrow(newpop))
+
+for (i in 1:length(newpop$q)) {
+  draw = round(runif(newpop$q[i], min = 1, max = length(s)))
+  t = s[draw]
+  portfolios[[i]] = t
+}
+
+# mean_portfolio_values = numeric(length(newpop$q))
+for (i in 1:length(portfolios)) {
+  mean_portfolio_values[i] = mean(portfolios[[i]])
+}
+average_benefit = mean(mean_portfolio_values)
+```
+All right! So, I have manually walked through a whole time step.
+
+We went from a mean portfolio benefit of 1.875 to a mean portfolio benefit of 1.877 in that single time step. It's creeping upward!
+
+This seems like a good place to start. Tomorrow, I'd like to:
+1) Put this material into a loop that spits out summary statistics (distribution of portfolio benefits at each time step, for example) as we go along, 2) Make some kind of graphic illustrating upward creep of portfolio benefit through time, 3) discern whether q (number of partners) is creeping up or down over time.
+
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
 
