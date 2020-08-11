@@ -31,8 +31,42 @@ With some reasonable probabilities associated with each state.
 
 I'll start with the trees to try to get a simulated population going. Then I will try two environmental conditions. Then I'll see if I can get the populations to evolve via simulation. Only THEN will I layer in more nuanced drought scenarios.
 
+Each tree has a q value and an s value.
+
+Let's say q can range from 1 (literally just one fungus can grow with this tree) to 100 (tree is promiscuous)
+
+We're going to have a forest of 100 trees.
+
 ```{r}
-plot(cars)
+# Defining q (specificity distribution)
+forest_size = 100
+mean_specificity = 50
+sd_specificity = 20
+
+q = rnorm(forest_size, mean = mean_specificity, sd = sd_specificity)
+hist(q)
+
+```
+
+Are all these fungi equally useful? Probably not. Let's treat the benefit axis (s) as a log growth response for now, so it lines up well with empirical results. A log growth response is:
+
+ln(mass of tree with fungi/mean mass of trees without fungi)
+
+Conveniently, this metric produces negative values when a fungus is parasitic, and positive values when the fungus is helpful. (I don't know if this will prove unwieldy in a modeling context. Let's see how it goes.)
+
+In realistic circumstances, it would be surprising if a fungus reduced a plant's growth by more than 50% without just killing it. (Perhaps I should work in a "the plant died" option down the line.) And the greatest growth IMPROVEMENT I've ever seen in a seedling was 5X, with Arbutus menziesii seedligs and Thelephora terrestris in a very low-N artificial soil after about a year of growth. (Note: Eventually I should tie these values to a lit review. But, for now, we're building this model based on my instincts.)
+
+```{r}
+# Defining s (benefit distribution)
+
+mean_benefit_factor = 2 # let's say that plants with fungi generally grow twice as big as plants without
+sd_benefit_factor = mean_benefit_factor*.2 # just a guess that most plants get within +/- 20% of the mean benefit
+
+s = rnorm(forest_size, mean = mean_benefit_factor, sd = sd_benefit_factor)
+
+
+hist(s)
+
 ```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
